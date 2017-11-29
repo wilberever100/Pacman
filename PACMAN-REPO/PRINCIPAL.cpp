@@ -1,6 +1,11 @@
+#include <string>
 #include <iostream>
 #include <allegro.h>
 #include <cstdlib>
+#include <fstream>
+using namespace std;
+
+
 #define MAXFILAS 20
 #define MAXCOLS 31
 #define FILAS 20
@@ -8,7 +13,9 @@
 BITMAP *buffer;
 BITMAP *roca;
 BITMAP *pacbmp;
+BITMAP *pacbmp2;
 BITMAP *pacman;
+BITMAP *pacman2;
 BITMAP *comida;
 BITMAP *enemigobmp;
 BITMAP *enemigo;
@@ -26,10 +33,12 @@ int px2= 30*11;
 int py2= 30*11;
 int fdir = 0;
 int _x=30*14, _y=30*15;
+int score=0;
+string name;
+string nombre[10];
+int puntajes[10];
+int vidas=4;
 
-
-
-using namespace std;
 ///////////////OPCION niveles///////////////
 BITMAP *bufferNiveles;
 BITMAP *Niv1bmp;
@@ -81,6 +90,52 @@ void MENU_Nivel()
         }
     }
 
+}
+void leyendo(){
+    ifstream lectura;
+    lectura.open("datos.txt",ios::out|ios::in);
+    if(lectura.is_open()){
+        int i=0;
+        lectura>>nombre[i];
+        cout<<"El top 10 de SCORE es: "<<endl;
+        while(!lectura.eof()){
+            lectura>>puntajes[i];
+            cout<<"nombre: "<<nombre[i]<<endl;
+            cout<<"score: "<<puntajes[i]<<endl;
+            i++;
+            lectura>>nombre[i];
+
+        }
+    }
+}
+void escribiendo(){
+    if(score>puntajes[9]){
+        puntajes[9]=score;
+        nombre[9]=name;
+
+        for(int i=8;i>=0;i--){
+
+
+        if(puntajes[i+1]>puntajes[i]){
+            int a=puntajes[i+1];
+            puntajes[i+1]=puntajes[i];
+            puntajes[i]=a;
+
+            string b=nombre[i+1];
+            nombre[i+1]=nombre[i];
+            nombre[i]=b;
+        }
+        }
+
+    }
+    ofstream escritura;
+    escritura.open("datos.txt",ios::out);
+    for(int i=0;i<10;i++){
+        escritura<<nombre[i]<<" ";
+        escritura<<puntajes[i]<<endl;
+    }
+
+    escritura.close();
 }
 void pantallaNiveles(){
     blit(bufferNiveles,screen,0,0,0,0,600,600);
@@ -203,6 +258,7 @@ void dibujar_mapa(){
                  draw_sprite(buffer,comida,col*30,row*30);
                  if(((py/30 ==row)&&(px/30== col))||(((py2/30 ==row) &&(px2/30== col)))){
                         mapa[row][col]=' ';
+                        score+=10;
 
                  }
             }
@@ -219,8 +275,8 @@ void dibujar_personaje(int k){
     blit(pacbmp,pacman,dir*33,0,0,0,33,33);
     draw_sprite(buffer,pacman,px,py);
     }else{
-    blit(pacbmp,pacman,dir2*33,0,0,0,33,33);
-    draw_sprite(buffer,pacman,px2,py2);
+    blit(pacbmp2,pacman2,dir2*33,0,0,0,33,33);
+    draw_sprite(buffer,pacman2,px2,py2);
     }
 }
 bool game_over(){
@@ -269,9 +325,13 @@ void fantasma::choque_pacman()
             pantalla();
             rest(80);
         }
+        vidas=vidas-1;
         px=30*14;
         py=30*17;
         dir=4;
+        px2=30*15;
+        py2=30*17;
+        dir2=4;
     }
 }
 void fantasma::mover_fantasma()
@@ -302,16 +362,23 @@ void fantasma::mover_fantasma()
 
 void Iniciarpacman()
 {
+    if(vidas==4){
+        cout<<"TIENES 3 VIDAS, el juego acaba cuando las pierdas todas o si comes todos los puntos"<<endl;
+    }
+    leyendo();
     set_color_depth(32);
     set_gfx_mode(GFX_AUTODETECT_WINDOWED,880,600,0,0);
     buffer = create_bitmap(880,600);
     roca = load_bitmap("roj.bmp",NULL);
     pacbmp = load_bitmap("pacman.bmp",NULL);
+    pacbmp2 = load_bitmap("pacman.bmp",NULL);
     pacman = create_bitmap(33,33);
+    pacman2 = create_bitmap(33,33);
     comida= load_bitmap("Comida.bmp",NULL);
     enemigo= create_bitmap(30,30);
     enemigobmp= load_bitmap("enemigo.bmp",NULL);
     muertebmp= load_bitmap("muerte.bmp",NULL);
+    vidas=3;
 
     fantasma A(30*2,30*3);
     fantasma B(30*15,30*15);
@@ -319,8 +386,10 @@ void Iniciarpacman()
     fantasma D(30*2,30*3);
     fantasma E(30*2,30*3);
 
+    bool GO=true;
+    while(!key[KEY_ESC] && game_over()&&GO){
 
-    while(!key[KEY_ESC] && game_over()){
+
         anteriorpx=px;
         anteriorpy=py;
         if(key[KEY_RIGHT])
@@ -354,8 +423,8 @@ void Iniciarpacman()
             else dir=4;
         }
 
-        if(px <= -30) px=870;
-          else if(px >=870) px= -30;
+        if(px <= -30) px=840;
+          else if(px >=840) px= -30;
         anteriorpx2=px2;
         anteriorpy2=py2;
         if(key[KEY_D])
@@ -380,7 +449,7 @@ void Iniciarpacman()
         if(dir2 == 2){
             if(mapa[(py2-30)/30][(px2)/30]!='X')
             py2 -=30;
-            else dir=4;
+            else dir2=4;
 
         }
         if(dir2 == 3){
@@ -408,10 +477,12 @@ void Iniciarpacman()
 
         blit(pacbmp,pacman,4*33,0,0,0,33,33);
         draw_sprite(buffer,pacman,px,py);
-        blit(pacbmp,pacman,4*33,0,0,0,33,33);
+        blit(pacbmp2,pacman,4*33,0,0,0,33,33);
         draw_sprite(buffer,pacman,px2,py2);
         pantalla();
         rest(90);
+        if(vidas==0)
+            GO=false;
     }
 
 }
@@ -471,6 +542,7 @@ int main()
             {
                   salida = true;
                   Iniciarpacman();
+
             }
          }
 
@@ -548,8 +620,12 @@ int main()
 	destroy_bitmap(Salir);
 	destroy_bitmap(Inicio);
 
+    cout<<"Gracias por jugar; Ingrese su nombre: "<<endl;
+    cin>>name;
 
+    escribiendo();
+    leyendo();
     return 0;
+
 }
 END_OF_MAIN();
-

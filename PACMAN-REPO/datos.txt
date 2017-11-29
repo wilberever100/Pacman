@@ -1,0 +1,10 @@
+dsd 740
+s 590
+andrea 390
+dsd 340
+alvaro 240
+dsd 80
+wilber 80
+s 10
+dsd 10
+dsd 10
